@@ -6,7 +6,7 @@
 
 # TL;DR
 
-Para executar rapidamente o sistema em sua máquina local:
+Para executar rapidamente o sistema:
 
 ### 1. Clonar o repositório
 ```bash
