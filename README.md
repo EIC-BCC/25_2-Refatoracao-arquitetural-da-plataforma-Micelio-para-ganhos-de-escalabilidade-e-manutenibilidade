@@ -21,7 +21,7 @@ npm run dev
 ### Frontend
 cd MicelioDashboardNext
 npm run dev
-
+``` 
 # Descrição Geral
 
 Este projeto consiste na refatoração arquitetural da plataforma Micélio utilizando o framework Next.js, com foco em aprimorar desempenho, escalabilidade, manutenção e organização estrutural. O trabalho envolveu a modernização de componentes, correção de funcionalidades existentes, adoção de Server-Side Rendering, reorganização de módulos e implementação de técnicas como Edge Functions e connection pooling para otimização de acesso ao banco de dados.
@@ -62,7 +62,7 @@ graph TD;
     NextJS-->API;
     API-->Database;
     EdgeFunction-->Database;
-
+```
 # Dependências
 
 * Node.js
@@ -88,4 +88,4 @@ npm run dev
 cd MicelioDashboardNext
 npm install
 npm run dev
-
+```
