@@ -1,7 +1,7 @@
 # 25_2-Refatoracao-arquitetural-da-plataforma-Micelio-para-ganhos-de-escalabilidade-e-manutenibilidade
-**Título do TCC:** Refatoração arquitetural da plataforma Micélio para ganhos de escalabilidade e manutenibilidade
-**Alunos:** Emmanuel Dickson Teye
-*Semestre de Defesa:** 2025-2 
+**Título do TCC:**  Refatoração arquitetural da plataforma Micélio para ganhos de escalabilidade e manutenibilidade 
+**Alunos:**  Emmanuel Dickson Teye 
+**Semestre de Defesa:** 2025-2 
 [PDF do TCC](https://www.overleaf.com/read/xymvjhpykdmw#313594)
 
 # TL;DR
