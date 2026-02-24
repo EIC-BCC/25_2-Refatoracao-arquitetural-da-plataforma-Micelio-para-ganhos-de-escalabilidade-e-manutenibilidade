@@ -10,6 +10,14 @@ module.exports = {
         password : process.env.DATABASE_PASSWORD,
         database : process.env.DATABASE
     },
+
+    //I'm using pool to improve scalability, reduce latency, and protect the MySQL server from being overloaded.
+    pool: {
+        min: 2,
+        max: 10
+    },
+
+
     migrations: {
         directory: path.resolve(__dirname, 'src', 'database', 'migrations')
     },
@@ -23,13 +31,3 @@ module.exports = {
 }; 
 
 
-// Log the configuration
-/*console.log('Connecting to MySQL with the following settings:');
-console.log({
-    client: config.client,
-    host: config.connection.host,
-    user: config.connection.user,
-    database: config.connection.database
-});
-
-module.exports = config; */

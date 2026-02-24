@@ -322,6 +322,289 @@ class ActivityController {
 		const baseDir = path.join(__dirname, '..', '..', '..', 'Scripts', 'MicelioParser', 'Control Harvest', 'JsonConverter', 'Exports')
 		return response.status(200).sendFile('sessao213.json', {root: baseDir});
 	}
+
+  //testing this out ITS A TEST
+async createTestActivities(request, response) {
+  const { session_id } = request.params;
+  const { game_id, device_id } = request.headers;
+
+  if (!session_id) {
+    return response.status(400).json({ error: "Session ID is required" });
+  }
+
+  // Verify session exists
+  try {
+    const session = await knex('Session')
+      .where('session_id', session_id)
+      .first();
+
+    if (!session) {
+      return response.status(404).json({ error: "Session not found" });
+    }
+
+    const trx = await knex.transaction();
+
+    try {
+      // Sample activities data
+      const testActivities = [
+        {
+          activity_id: `test_activity_001#${session_id}`,
+          name: "PlayerMove",
+          time: 100,
+          position_x: 50,
+          position_y: 30,
+          properties: {}
+        },
+        {
+          activity_id: `test_activity_002#${session_id}`,
+          name: "PlayerMove",
+          time: 150,
+          position_x: 55,
+          position_y: 35,
+          properties: {}
+        },
+        {
+          activity_id: `test_activity_003#${session_id}`,
+          name: "EnemySpawn",
+          time: 200,
+          position_x: 80,
+          position_y: 60,
+          properties: {}
+        },
+        {
+          activity_id: `test_activity_004#${session_id}`,
+          name: "PlayerMove",
+          time: 250,
+          position_x: 60,
+          position_y: 40,
+          properties: {}
+        },
+        {
+          activity_id: `test_activity_005#${session_id}`,
+          name: "CollectItem",
+          time: 300,
+          position_x: 45,
+          position_y: 25,
+          properties: {}
+        },
+        {
+          activity_id: `test_activity_006#${session_id}`,
+          name: "EnemySpawn",
+          time: 350,
+          position_x: 70,
+          position_y: 50,
+          properties: {}
+        },
+        {
+          activity_id: `test_activity_007#${session_id}`,
+          name: "PlayerAttack",
+          time: 400,
+          position_x: 75,
+          position_y: 55,
+          properties: {}
+        },
+        {
+          activity_id: `test_activity_008#${session_id}`,
+          name: "EnemyDeath",
+          time: 450,
+          position_x: 80,
+          position_y: 60,
+          properties: {}
+        },
+        {
+          activity_id: `test_activity_009#${session_id}`,
+          name: "CollectItem",
+          time: 500,
+          position_x: 40,
+          position_y: 20,
+          properties: {}
+        },
+        {
+          activity_id: `test_activity_010#${session_id}`,
+          name: "UseItem",
+          time: 550,
+          position_x: 50,
+          position_y: 30,
+          properties: {}
+        }
+      ];
+
+      // Insert activities
+      for (const activity of testActivities) {
+        await trx('Activity').insert({
+          session_id,
+          activity_id: activity.activity_id,
+          name: activity.name,
+          time: activity.time,
+          properties: JSON.stringify(activity.properties)
+        });
+
+        // Insert action (position)
+        if (activity.position_x && activity.position_y) {
+          await trx('Action').insert({
+            activity_id: activity.activity_id,
+            position_x: activity.position_x,
+            position_y: activity.position_y,
+            
+          });
+        }
+      }
+
+      // Insert test agents
+      const playerAgent = {
+        agent_id: `player_1#${session_id}`,
+        name: "Player",
+        type: "human",
+        properties: JSON.stringify({})
+      };
+
+      const enemyAgent = {
+        agent_id: `enemy_1#${session_id}`,
+        name: "Enemy",
+        type: "npc",
+        properties: JSON.stringify({})
+      };
+
+      await trx('Agent')
+        .insert([playerAgent, enemyAgent])
+        .onConflict('agent_id')
+        .ignore();
+
+      // Link agents to activities
+      const agentActivities = [
+        // PlayerMove activities
+        { agent_id: playerAgent.agent_id, activity_id: `test_activity_001#${session_id}`, role: "player", position_x: 50, position_y: 30, properties: JSON.stringify({}) },
+        { agent_id: playerAgent.agent_id, activity_id: `test_activity_002#${session_id}`, role: "player", position_x: 55, position_y: 35, properties: JSON.stringify({}) },
+        { agent_id: playerAgent.agent_id, activity_id: `test_activity_004#${session_id}`, role: "player", position_x: 60, position_y: 40, properties: JSON.stringify({}) },
+        
+        // EnemySpawn activities
+        { agent_id: enemyAgent.agent_id, activity_id: `test_activity_003#${session_id}`, role: "enemy", position_x: 80, position_y: 60, properties: JSON.stringify({}) },
+        { agent_id: enemyAgent.agent_id, activity_id: `test_activity_006#${session_id}`, role: "enemy", position_x: 70, position_y: 50, properties: JSON.stringify({}) },
+        
+        // CollectItem activities
+        { agent_id: playerAgent.agent_id, activity_id: `test_activity_005#${session_id}`, role: "player", position_x: 45, position_y: 25, properties: JSON.stringify({}) },
+        { agent_id: playerAgent.agent_id, activity_id: `test_activity_009#${session_id}`, role: "player", position_x: 40, position_y: 20, properties: JSON.stringify({}) },
+        
+        // PlayerAttack
+        { agent_id: playerAgent.agent_id, activity_id: `test_activity_007#${session_id}`, role: "player", position_x: 75, position_y: 55, properties: JSON.stringify({}) },
+        
+        // EnemyDeath
+        { agent_id: enemyAgent.agent_id, activity_id: `test_activity_008#${session_id}`, role: "enemy", position_x: 80, position_y: 60, properties: JSON.stringify({}) },
+        
+        // UseItem
+        { agent_id: playerAgent.agent_id, activity_id: `test_activity_010#${session_id}`, role: "player", position_x: 50, position_y: 30, properties: JSON.stringify({}) }
+      ];
+
+      await trx('ActivityAgents').insert(agentActivities);
+
+      // Insert test entities
+      const healthPotion = {
+        entity_id: `health_potion_1#${session_id}`,
+        name: "Health Potion",
+        properties: JSON.stringify({})
+      };
+
+      const sword = {
+        entity_id: `sword_1#${session_id}`,
+        name: "Sword",
+        properties: JSON.stringify({})
+      };
+
+      await trx('Entity')
+        .insert([healthPotion, sword])
+        .onConflict('entity_id')
+        .ignore();
+
+      // Link entities to CollectItem activities
+      const entityActivities = [
+        { entity_id: healthPotion.entity_id, activity_id: `test_activity_005#${session_id}`, role: "item", position_x: 45, position_y: 25, properties: JSON.stringify({}) },
+        { entity_id: sword.entity_id, activity_id: `test_activity_009#${session_id}`, role: "item", position_x: 40, position_y: 20, properties: JSON.stringify({}) }
+      ];
+
+      await trx('ActivityEntities').insert(entityActivities);
+
+      await trx.commit();
+
+      return response.status(201).json({ 
+        ok: true, 
+        message: `Successfully created ${testActivities.length} test activities for session ${session_id}` 
+      });
+
+    } catch (err) {
+      await trx.rollback();
+      console.error('[ERRO TEST ACTIVITIES]', err);
+      return response.status(500).json({ error: err.message });
+    }
+
+  } catch (err) {
+    console.error('[ERRO TEST ACTIVITIES]', err);
+    return response.status(500).json({ error: err.message });
+  }
 }
+//it ends here oooo
+
+//2nd Test ITS A TEST
+async deleteTestActivities(request, response) {
+  const { session_id } = request.params;
+
+  try {
+    const trx = await knex.transaction();
+
+    try {
+      // Delete in correct order (foreign key constraints)
+      await trx('ActivityAgents')
+        .whereIn('activity_id', function() {
+          this.select('activity_id')
+            .from('Activity')
+            .where('session_id', session_id)
+            .andWhere('activity_id', 'like', `test_activity_%`);
+        })
+        .del();
+
+      await trx('ActivityEntities')
+        .whereIn('activity_id', function() {
+          this.select('activity_id')
+            .from('Activity')
+            .where('session_id', session_id)
+            .andWhere('activity_id', 'like', `test_activity_%`);
+        })
+        .del();
+
+      await trx('Action')
+        .whereIn('activity_id', function() {
+          this.select('activity_id')
+            .from('Activity')
+            .where('session_id', session_id)
+            .andWhere('activity_id', 'like', `test_activity_%`);
+        })
+        .del();
+
+      await trx('Activity')
+        .where('session_id', session_id)
+        .andWhere('activity_id', 'like', `test_activity_%`)
+        .del();
+
+      await trx.commit();
+
+      return response.status(200).json({ 
+        ok: true, 
+        message: `Deleted test activities for session ${session_id}` 
+      });
+
+    } catch (err) {
+      await trx.rollback();
+      throw err;
+    }
+
+  } catch (err) {
+    console.error('[ERRO DELETE TEST ACTIVITIES]', err);
+    return response.status(500).json({ error: err.message });
+  }
+}
+//IT ENDS BEFORE THE CLOSSING KEY 
+}
+
+    
+
 
 module.exports = ActivityController;

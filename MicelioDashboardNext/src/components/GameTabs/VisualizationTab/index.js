@@ -17,19 +17,25 @@ export default function VisualizationTab({ gameId }) {
   const [gameData, setGameData] = useState({});
 
   useEffect(() => {
+  if (gameId) {  // ⬅️ Add this check
     getVisualizationList();
     getSessionList();
-  }, []);
+  }
+}, [gameId]);  // ⬅️ Add gameId as dependency
 
-  useEffect(() => {
-    if (currentVisualization && currentSession) {
-      console.log(currentVisualization, currentSession, 'AQUI');
-      Api.get(`/visualization/session/${currentSession.session_id}`).then((response) => {
+ useEffect(() => {
+  if (currentVisualization && currentSession) {
+    console.log(currentVisualization, currentSession, 'AQUI');
+    Api.get(`/visualization/session/${currentSession.session_id}?visualization_id=${currentVisualization.visualization_id}`)
+      .then((response) => {
+        console.log('Game data received:', response.data);  // Add this log
         setGameData(response.data);
+      })
+      .catch((error) => {
+        console.error('Error fetching game data:', error);  // Add error handling
       });
-    }
-  }, [currentVisualization, currentSession]);
-
+  }
+}, [currentVisualization, currentSession]);
   useEffect(() => {
     console.log('VISUALIZACAO', currentVisualization);
     if (currentVisualization.config) {
@@ -47,11 +53,15 @@ export default function VisualizationTab({ gameId }) {
   };
 
   const getSessionList = async () => {
-    try {
-      const response = await Api.get(`/session/${gameId}`);
-      setSessionList(response.data);
-    } catch (e) {}
-  };
+  try {
+    console.log('Fetching sessions for gameId:', gameId); // ⬅️ Add this
+    const response = await Api.get(`/session/${gameId}`);
+    console.log('Sessions received:', response.data); // ⬅️ Add this
+    setSessionList(response.data);
+  } catch (e) {
+    console.error('Error fetching sessions:', e); // ⬅️ Add this
+  }
+};
 
   const doDrawVisualization = () => {};
 
@@ -115,7 +125,9 @@ export default function VisualizationTab({ gameId }) {
             }>
             <option value={''}>Selecione</option>
             {sessionList.map((session) => (
-              <option value={session.session_id}>{session.name}</option>
+              <option key={session.session_id} value={session.session_id}>
+        {session.name}
+      </option>
             ))}
           </Select>
         </Box>
@@ -132,9 +144,28 @@ export default function VisualizationTab({ gameId }) {
           </Link>
         </Box>
       </Flex>
-      {currentVisualization && currentVisualization.config && (
-        <Visualization activities={gameData.activities} config={JSON.parse(currentVisualization.config)} />
-      )}
+      
+      
+      {console.log('🔍 Check before render:', {
+  hasCurrentVis: !!currentVisualization,
+  hasConfig: !!currentVisualization?.config,
+  gameData: gameData,
+  hasActivities: !!gameData?.activities
+})}
+
+
+
+
+
+   {currentVisualization?.config && currentSession?.session_id && gameData?.activities && (
+  <Visualization
+    config={JSON.parse(currentVisualization.config)}
+    currentSession={currentSession.session_id}
+    activities={gameData.activities}
+  />
+)}
+
+      
 
       {visualizations.length === 0 && (
         <Flex w={'100%'} justifyContent={'center'} alignItems={'center'} flexDirection={'column'} mt={20}>
@@ -145,3 +176,37 @@ export default function VisualizationTab({ gameId }) {
     </>
   );
 }
+
+
+
+
+
+
+/*useEffect(() => {
+  console.log('VISUALIZACAO', currentVisualization);
+  if (currentVisualization.config) {
+    console.log('CONFIG', JSON.parse(currentVisualization.config));
+  }
+}, [currentVisualization]);
+
+
+
+
+
+
+
+
+{currentVisualization && currentVisualization.config && (() => {
+  let configData;
+  try {
+    configData = JSON.parse(currentVisualization.config);
+  } catch (error) {
+    console.error("Invalid JSON format in config:", error);
+    configData = {}; // Provide a default empty object as fallback
+  }
+
+  return (
+    <Visualization activities={gameData.activities} config={configData} />
+  );
+})()}
+*/

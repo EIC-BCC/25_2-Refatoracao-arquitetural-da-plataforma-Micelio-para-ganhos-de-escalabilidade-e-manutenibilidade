@@ -1,4 +1,5 @@
 const knex = require('../database/connection');
+const bcrypt = require('bcrypt');
 const idGenerator = require('../utils/generators/idGenerator');
 const {generatePassword, isPasswordValid} = require('../utils/generators/passwordGenerator');
 const {generateUserSession, decodeUserSession} = require('../utils/generators/userSessionGenerator')
@@ -133,6 +134,11 @@ class UserController {
   async login(request, response) {
     const {username, password} = request.body
 
+   /* console.log('Login attempt:', {username, password}); */
+   /*console.log('Login attempt:', { username: request.body.username, password: request.body.password });*/
+  
+
+
     if (!username) {
       return response.status(400).json({error: "Invalid username"});
     }
@@ -163,41 +169,84 @@ class UserController {
    }); */
     response.json({ok: true, data: user_db, token});
   }
-
+/*
   async logout(request, response) {
     response.clearCookie('miceliotoken')
-    response.send()
+    response.status(200).json({ message: 'Logged out successfully' }) // this was what i added
+   
+    // response.send() this was the orignal
+
+
+
+    
   }
+*/
 
-  async updatePassword(request, response) {
-    const {currentPassword, password, passwordConfirm} = request.body
-    const {miceliotoken} = request.cookies
 
-    if (!miceliotoken) {
-      return response.status(401).send()
-    }
 
-    try {
-      const {sub: userId} = decodeUserSession(miceliotoken)
+async logout(request, response) {
+  try {
+    // Clear the 'miceliotoken' cookie
+    response.clearCookie('miceliotoken', {
+      httpOnly: true,  // Makes cookie accessible only via HTTP requests, not JavaScript
+      secure: process.env.ENV !== 'dev', // Use secure cookies in production, not in development
+      sameSite: 'strict', // Helps prevent CSRF attacks
+    });
 
-      const currentUser = await knex('MicelioUser').select().where('user_id', userId).first()
-      if (!currentUser) {
-        return response.status(401).send()
-      }
-
-      if (!isPasswordValid(currentUser.password, currentPassword)) {
-        return response.status(400).json({error: "Senha atual inválida"})
-      }
-
-      await knex('MicelioUser').update({password}).where('user_id', userId)
-      return response.status(200).send()
-
-    } catch (e) {
-      console.log(e)
-      return response.status(500)
-    }
-
+    // Respond with a success message
+    response.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    response.status(500).json({ error: 'Internal server error' });
   }
 }
 
+
+
+  async updatePassword(request, response) {
+  const { currentPassword, newPassword, passwordConfirm } = request.body;
+  const { miceliotoken } = request.cookies;
+
+  if (!miceliotoken) {
+    return response.status(401).send();
+  }
+
+  try {
+    const { sub: userId } = decodeUserSession(miceliotoken);
+
+    const currentUser = await knex('MicelioUser')
+      .select()
+      .where('user_id', userId)
+      .first();
+
+    if (!currentUser) {
+      return response.status(401).send();
+    }
+
+    // Verify current password
+    const validPassword = await bcrypt.compare(currentPassword, currentUser.password);
+    if (!validPassword) {
+      return response.status(400).json({ error: "Senha atual inválida" });
+    }
+
+    // Confirm new password matches
+    if (newPassword !== passwordConfirm) {
+      return response.status(400).json({ error: "As senhas não coincidem" });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update DB
+    await knex('MicelioUser')
+      .where('user_id', userId)
+      .update({ password: hashedPassword });
+
+    return response.status(200).json({ message: "Senha atualizada com sucesso" });
+  } catch (e) {
+    console.error("Error updating password:", e);
+    return response.status(500).json({ error: "Erro interno do servidor" });
+  }
+}
+}
 module.exports = UserController;

@@ -1,169 +1,103 @@
-import * as vl from 'vega-lite-api';
+const DEFAULT_SCREEN_WIDTH = 800;
 
-const getPopulation = (session, agentsNameList, entitiesNameList, activitiesMap) => {
-  var clone = (obj) => {
-    return JSON.parse(JSON.stringify(obj));
-  };
+const clone = (obj) => JSON.parse(JSON.stringify(obj));
+
+const getPopulation = (sessionObj, agentsNameList, entitiesNameList, activitiesMap) => {
+  const sessionActivities = Array.isArray(sessionObj)
+    ? sessionObj
+    : sessionObj.activities || [];
 
   var agentsList = {};
   var entitiesList = {};
+  var population = [];
 
-  if (agentsNameList) {
-    for (var i in agentsNameList) {
-      agentsList[agentsNameList[i]] = 0;
-    }
+  if (Array.isArray(agentsNameList)) {
+    agentsNameList.forEach((a) => (agentsList[a] = 0));
   } else {
     agentsNameList = [];
   }
 
-  if (entitiesNameList) {
-    for (var i in entitiesNameList) {
-      entitiesList[entitiesNameList[i]] = 0;
-    }
+  if (Array.isArray(entitiesNameList)) {
+    entitiesNameList.forEach((e) => (entitiesList[e] = 0));
   } else {
     entitiesNameList = [];
   }
 
-  var population = [];
+  const includeList = activitiesMap.insert || [];
+  const excludeList = activitiesMap.remove || [];
 
-  var includeList = activitiesMap['insert'] ? activitiesMap['insert'] : [];
-  var excludeList = activitiesMap['remove'] ? activitiesMap['remove'] : [];
-
-  //resolver problema de role undefined
-  for (var i in session.activities) {
-    var activity = session.activities[i];
-
+  for (let activity of sessionActivities) {
+    // INSERT LOGIC
     if (includeList.some((a) => a.name === activity.name)) {
-      let activityAux = includeList.filter((a) => a.name === activity.name)[0];
+      const activityAux = includeList.find((a) => a.name === activity.name);
 
-      for (var j in activity.agents) {
-        var agent = activity.agents[j];
-
-        if (agentsNameList.includes(agent.name) && activityAux !== undefined) {
-          if (activityAux.role === undefined) {
+      // AGENTS
+      for (let agent of activity.agents || []) {
+        if (agentsNameList.includes(agent.name)) {
+          if (!activityAux.role || activityAux.role.includes(agent.role)) {
             agentsList[agent.name]++;
-
             population.push(
               clone({
                 time: activity.time,
                 agent: agent.name,
                 quantity: agentsList[agent.name],
-                type: 'agent',
+                type: "agent",
               })
             );
-          } else {
-            if (activityAux.role.includes(agent.role)) {
-              agentsList[agent.name]++;
-
-              population.push(
-                clone({
-                  time: activity.time,
-                  agent: agent.name,
-                  quantity: agentsList[agent.name],
-                  type: 'agent',
-                })
-              );
-            }
           }
         }
       }
 
-      for (var j in activity.entities) {
-        var entity = activity.entities[j];
-
-        if (entitiesNameList.includes(entity.name) && activityAux !== undefined) {
-          if (activityAux.role === undefined) {
+      // ENTITIES
+      for (let entity of activity.entities || []) {
+        if (entitiesNameList.includes(entity.name)) {
+          if (!activityAux.role || activityAux.role.includes(entity.role)) {
             entitiesList[entity.name]++;
-
             population.push(
               clone({
                 time: activity.time,
                 agent: entity.name,
                 quantity: entitiesList[entity.name],
-                type: 'entity',
+                type: "entity",
               })
             );
-          } else {
-            if (activityAux.role.includes(entity.role)) {
-              entitiesList[entity.name]++;
-
-              population.push(
-                clone({
-                  time: activity.time,
-                  agent: entity.name,
-                  quantity: entitiesList[entity.name],
-                  type: 'entity',
-                })
-              );
-            }
           }
         }
       }
     }
 
+    // REMOVE LOGIC
     if (excludeList.some((a) => a.name === activity.name)) {
-      let activityAux = includeList.filter((a) => a.name === activity.name)[0];
+      const activityAux = excludeList.find((a) => a.name === activity.name);
 
-      for (var j in activity.agents) {
-        var agent = activity.agents[j];
-
-        if (agentsNameList.includes(agent.name) && activityAux !== undefined) {
-          if (activityAux.role === undefined) {
+      for (let agent of activity.agents || []) {
+        if (agentsNameList.includes(agent.name)) {
+          if (!activityAux.role || activityAux.role.includes(agent.role)) {
             agentsList[agent.name]--;
-
             population.push(
               clone({
                 time: activity.time,
                 agent: agent.name,
                 quantity: agentsList[agent.name],
-                type: 'agent',
+                type: "agent",
               })
             );
-          } else {
-            if (activityAux.role.includes(agent.role)) {
-              agentsList[agent.name]--;
-
-              population.push(
-                clone({
-                  time: activity.time,
-                  agent: agent.name,
-                  quantity: agentsList[agent.name],
-                  type: 'agent',
-                })
-              );
-            }
           }
         }
       }
 
-      for (var j in activity.entities) {
-        var entity = activity.entities[j];
-
-        if (entitiesNameList.includes(entity.name) && activityAux !== undefined) {
-          if (activityAux.role === undefined) {
+      for (let entity of activity.entities || []) {
+        if (entitiesNameList.includes(entity.name)) {
+          if (!activityAux.role || activityAux.role.includes(entity.role)) {
             entitiesList[entity.name]--;
-
             population.push(
               clone({
                 time: activity.time,
                 agent: entity.name,
                 quantity: entitiesList[entity.name],
-                type: 'entity',
+                type: "entity",
               })
             );
-          } else {
-            if (activityAux.role.includes(entity.role)) {
-              entitiesList[entity.name]--;
-
-              population.push(
-                clone({
-                  time: activity.time,
-                  agent: entity.name,
-                  quantity: entitiesList[entity.name],
-                  type: 'entity',
-                })
-              );
-            }
           }
         }
       }
@@ -173,118 +107,149 @@ const getPopulation = (session, agentsNameList, entitiesNameList, activitiesMap)
 };
 
 export class GraphFactory {
-  selectActivityName = vl.selectMulti().fields('name');
-
-  visualizationConfig = null;
-
-  constructor(visualizationConfig) {
+  constructor(visualizationConfig = {}) {
     this.visualizationConfig = visualizationConfig;
-    this.brush = vl.selectInterval('abc').encodings('x');
-  }
-  GetTimeline(
-    activities,
-    timelineConfiguration,
-    { xTitle = 'Tempo de jogo', legendTitle = 'Atividades', mainTitle = 'Linha do Tempo' } = {}
-  ) {
-    const filteredActivities = activities.filter((activity) => {
-      if (timelineConfiguration.activities.includes(activity.name)) return activity;
-    });
-
-    return vl
-      .markArea()
-      .data(filteredActivities)
-      .encode(
-        vl.x().fieldQ('time').title(xTitle),
-        vl.y().count().title(''),
-        vl.color().fieldN('name').scale({ scheme: 'paired' }).title(legendTitle)
-      )
-      .title(mainTitle)
-      .select(this.brush, this.selectActivityName)
-      .height(40)
-      .width(this.visualizationConfig.screen_width);
+    this.screenWidth =
+      visualizationConfig.screen_width || DEFAULT_SCREEN_WIDTH;
   }
 
-  GetActivitiesCircle(
-    activities,
-    { circle_bins, activitiesList },
-    { xTitle = 'Tempo de jogo', legendTitle = 'QTD', mainTitle = 'Atividades' } = {}
-  ) {
-    return vl
-      .markCircle()
-      .data(activities)
-      .encode(
-        vl.y().fieldN('name').title('').axis({ grid: true, gridColor: '#F0F0F0' }).sort(activitiesList),
-        vl.x().fieldQ('time').title(xTitle).bin({ maxbins: circle_bins }),
-        vl
-          .size()
-          .count()
-          .scale({ range: [20, 500] })
-          .title(legendTitle),
-        vl.color().fieldN('name').scale({ scheme: 'paired' }).legend(false),
-        vl.tooltip('name')
-      )
-      .title(mainTitle)
-      .transform([vl.filter(this.selectActivityName), vl.filter(this.brush)])
-      .height(400)
-      .width(this.visualizationConfig.screen_width);
-  }
+  // =====================================================
+  //  BAR GRAPH  (NEW)
+  // =====================================================
+  GetBar(activities, graphConfig = {}) {
+    const width = graphConfig.width || this.screenWidth;
+    const height = graphConfig.height || 300;
 
-  GetHeatMap(activities, { activities: activitiesHeatMapList }, { mainTitle = 'Heat Map' } = {}) {
-    var heatMapData = activities.filter((a) => {
-      if (activitiesHeatMapList.includes(a.name)) return a;
-    });
-
-    return vl
-      .markRect({ clip: true })
-      .data(heatMapData)
-      .encode(
-        vl
-          .x()
-          .fieldQ('position_x')
-          .bin({ maxbins: 20 })
-          .axis({ grid: true, gridColor: '#FFFFFF' })
-          .title('')
-          .scale({ domainMin: 0 }),
-        vl
-          .y()
-          .fieldQ('position_y')
-          .bin({ maxbins: 20 })
-          .axis({ grid: true, gridColor: '#FFFFFF' })
-          .title('')
-          .scale({ domainMin: 0 })
-          .sort('descending'),
-        vl.color().count().scale({ scheme: 'reds' }).legend({ orient: 'bottom', padding: 10 }),
-        vl.tooltip(['name', 'time'])
-      )
-      .title('Heat Map')
-      .transform([vl.filter(this.brush)])
-      .width(800 / 2)
-      .height(800 / 3);
-  }
-
-  GetPopulation(
-    activities,
-    { agents, entities, insert, remove },
-    { mainTitle = 'Gráfico de População', xTitle = 'Tempo de jogo', legendTitle = 'Personagens' } = {}
-  ) {
-    const activitiesMap = {
-      insert,
-      remove,
+    return {
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      description: "Bar Chart",
+      data: { values: activities || [] },
+      mark: "bar",
+      encoding: {
+        x: {
+          field: graphConfig.x || "name",
+          type: "nominal",
+        },
+        y: {
+          field: graphConfig.y || "score",
+          type: "quantitative",
+        },
+        color: {
+          field: graphConfig.color || "name",
+          type: "nominal",
+        },
+        tooltip: [
+          { field: graphConfig.x || "name" },
+          { field: graphConfig.y || "score" },
+        ],
+      },
+      width,
+      height,
     };
+  }
 
-    const populationData = getPopulation({ activities }, agents, entities, activitiesMap);
+  // =====================================================
+  //  TIMELINE
+  // =====================================================
+  GetTimeline(activities, graphConfig = {}) {
+    const filtered = activities.filter((a) =>
+      (graphConfig.activities || []).includes(a.name)
+    );
 
-    return vl
-      .markLine({ interpolate: 'step', clip: true })
-      .data(populationData)
-      .encode(
-        vl.x().fieldQ('time').title(xTitle),
-        vl.y().fieldQ('quantity').scale({ domainMin: 0 }),
-        vl.color().fieldN('agent'),
-        vl.color().fieldN('agent').title(legendTitle).legend({ orient: 'bottom' })
-      )
-      .title(mainTitle)
-      .transform(vl.filter(this.brush))
-      .width(this.visualizationConfig.screen_width);
+    return {
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      mark: "area",
+      data: { values: filtered },
+      encoding: {
+        x: { field: "time", type: "quantitative" },
+        y: { aggregate: "count" },
+        color: { field: "name", type: "nominal" },
+      },
+      width: graphConfig.width || this.screenWidth,
+      height: graphConfig.height || 40,
+    };
+  }
+
+  // =====================================================
+  //  CIRCLE CHART
+  // =====================================================
+  GetActivitiesCircle(activities, graphConfig = {}) {
+    return {
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      mark: { type: "circle", tooltip: true },
+      data: { values: activities },
+      encoding: {
+        y: {
+          field: "name",
+          type: "nominal",
+          sort: graphConfig.activitiesList,
+        },
+        x: {
+          field: "time",
+          type: "quantitative",
+          bin: { maxbins: graphConfig.circle_bins || 20 },
+        },
+        size: { aggregate: "count" },
+        color: { field: "name", type: "nominal" },
+      },
+      width: graphConfig.width || this.screenWidth,
+      height: graphConfig.height || 400,
+    };
+  }
+
+  // =====================================================
+  //  HEATMAP
+  // =====================================================
+  GetHeatMap(activities, graphConfig = {}, imageUrl, imgW, imgH) {
+    const filtered = activities.filter((a) =>
+      (graphConfig.activities || []).includes(a.name)
+    );
+
+    return {
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      mark: { type: "rect", tooltip: true },
+      data: { values: filtered },
+      encoding: {
+        x: { field: "position_x", type: "quantitative", bin: { maxbins: 20 } },
+        y: {
+          field: "position_y",
+          type: "quantitative",
+          bin: { maxbins: 20 },
+          sort: "descending",
+        },
+        color: { aggregate: "count", type: "quantitative" },
+      },
+      width: graphConfig.width || imgW / 2,
+      height: graphConfig.height || imgH / 3,
+    };
+  }
+
+  // =====================================================
+  //  POPULATION
+  // =====================================================
+  GetPopulation(activities, graphConfig = {}) {
+    const pop = getPopulation(
+      { activities },
+      graphConfig.agents || [],
+      graphConfig.entities || [],
+      {
+        insert: graphConfig.insert || [],
+        remove: graphConfig.remove || [],
+      }
+    );
+
+    return {
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      mark: { type: "line", interpolate: "step", point: true },
+      data: { values: pop },
+      encoding: {
+        x: { field: "time", type: "quantitative" },
+        y: { field: "quantity", type: "quantitative" },
+        color: { field: "agent", type: "nominal" },
+      },
+      width: graphConfig.width || this.screenWidth,
+    };
   }
 }
+
+export default GraphFactory;

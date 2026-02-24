@@ -14,10 +14,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
 
   useEffect(() => {
-    if (user) {
-      router.push('/home');
-    }
-  }, [user]);
+  if (!user) {
+    router.replace('/login');
+  }
+}, [user]);
+
 
   const doLogin = async (formEvent) => {
     formEvent.preventDefault();
@@ -38,7 +39,7 @@ export default function LoginPage() {
     <>
       <ToastContainer />
       <Flex>
-        <Flex flex={1} justifyContent={'center'} alignItems={'center'} h={'100vh'}>
+        <Flex flex={1} justifyContent={'center'} alignItems={'center'} h={'100vh'} >
           <Flex boxShadow={'0 0 5px #a5a5a5'} padding={8} borderRadius={8} w={'100%'} maxW={'400px'} flexDir={'column'}>
             <Heading textAlign={'center'}>Micelio</Heading>
             <Box mt={10}>
@@ -75,10 +76,22 @@ export default function LoginPage() {
             </Text>
           </Flex>
         </Flex>
-        <Flex flex={1} h={'100vh'} bg={'micelio.primary'}>
+        {/* <Flex flex={1} h={'100vh'} bg={'micelio.primary'} display='none'>
           xxx
-        </Flex>
+        </Flex> */}
       </Flex>
     </>
   );
 }
+
+
+
+
+
+//this code below was causing the logout click to redirect to the home instead of the login page. but it has been replaced with the new code
+/* useEffect(() => {
+    if (user) {
+      router.push('/home');
+    }
+  }, [user]);
+  */

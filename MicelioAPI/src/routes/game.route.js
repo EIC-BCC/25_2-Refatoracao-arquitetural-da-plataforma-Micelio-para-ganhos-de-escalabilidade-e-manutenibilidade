@@ -14,6 +14,17 @@ Router.get('/:game_id', gameController.index);
 Router.get('/', gameController.get);
 Router.post('/', gameController.create);
 
-Router.post('/share', shareController.create)
+Router.delete('/:id', gameController.deleteGame); 
+Router.post('/share', shareController.create); 
+
+
+
+
+// Add this DELETE route for deleting a game by ID
+// Router.delete('/:game_id', gameController.delete);
+// Define the delete route
+  // Router.delete('/game/:id', gameController.deleteGame);
+
+
 
 module.exports = Router;

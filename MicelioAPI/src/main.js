@@ -1,11 +1,18 @@
+
+
 const path = require('path');
 require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser')
 const Routes = require('./routes/routes');
 const cors = require('cors');
-
+//const gameRoutes = require('./routes/game.route');
 const knex = require('./database/connection');
+
+
+
+
+
 
 
 if(   !process.env.HTTP_PORT
@@ -23,12 +30,18 @@ if(   !process.env.HTTP_PORT
 }
 
 const app = express();
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({credentials: true, origin: true}));
+//app.use('/api', gameRoutes);
 
-const baseDir = path.join(__dirname, '..', '..', 'MicelioDashboardNext', 'build',  );
-app.use(express.static(`${baseDir}`));
+//I commented-out the below codes so i could test the dege function
+
+//const baseDir = path.join(__dirname, '..', '..', 'MicelioDashboardNext', 'build',  );
+//app.use(express.static(`${baseDir}`));
+
+
 
 
 
@@ -45,12 +58,16 @@ app.use(express.static(`${baseDir}`));
 */
 
 
-
-
-
-
 app.use('/api', Routes);
-app.get('*', (req,res) => res.sendFile('index.html' , { root : baseDir }));
+
+// the below code was commented-out to test the edge funtion 
+
+//app.get('*', (req,res) => res.sendFile('index.html' , { root : baseDir }));
+
+const authRoutes = require('./routes/auth.route');
+app.use('/api/auth', authRoutes);
+
+
 
 const PORT = process.env.HTTP_PORT || 3001;
 app.listen(PORT, () => {

@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Header from '../../components/Header';
 import { useEffect, useState } from 'react';
 import Api from '../../services/Api';
-import { Box, Button, Container, Flex, Heading, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@chakra-ui/react';
+import { Box, Button, Container, Flex, Heading, Tab, TabList, TabPanel, TabPanels, Tabs, Text, useToast } from '@chakra-ui/react';
 import Link from 'next/link';
 import { FiArrowLeft } from 'react-icons/fi';
 import { FaShareAlt } from 'react-icons/fa';
@@ -11,12 +11,14 @@ import GroupTab from '../../components/GameTabs/GroupTab';
 import VisualizationTab from '../../components/GameTabs/VisualizationTab';
 import VisualizationGroupTab from '../../components/GameTabs/VisualizationGroupTab';
 import ShareModal from '../../components/_modals/ShareModal';
+import axios from 'axios';
 
 export default function GamePage(props) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [currentGame, setCurrentGame] = useState(null);
   const [groups, setGroups] = useState();
   const router = useRouter();
+  const toast = useToast();  // Initialize toast here
   const { gameId } = router.query;
 
   useEffect(() => {
@@ -26,6 +28,33 @@ export default function GamePage(props) {
       setGroups(response.data.groups);
     });
   }, [gameId]);
+
+
+  const handleDeleteGame = async () => {
+   
+    try {
+      
+      await Api.delete(`/game/${gameId}`);
+      toast({
+        title: 'Jogo deletado.',
+        description: 'O jogo foi deletado com sucesso.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      router.push('/home');
+    } catch (error) {
+      toast({
+        title: 'Erro ao deletar o jogo.',
+        description: 'Ocorreu um erro ao tentar deletar o jogo.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+console.log("GamePage gameId =", gameId);
 
   return (
     <>
@@ -69,7 +98,7 @@ export default function GamePage(props) {
                 <FaShareAlt style={{ marginRight: 4 }} />
                 Compartilhar
               </Button>
-              <Button bg={'red'} color={'white'} mt={2} fontWeight={'bold'}>
+              <Button bg={'red'} color={'white'} mt={2} fontWeight={'bold'}  onClick={handleDeleteGame} >
                 Deletar jogo
               </Button>
             </Flex>
@@ -81,13 +110,13 @@ export default function GamePage(props) {
               </TabList>
               <TabPanels>
                 <TabPanel mt={5}>
-                  <GroupTab gameId={gameId} groups={groups} />
+                  <GroupTab gameId={gameId} groups={groups}  />
                 </TabPanel>
                 <TabPanel mt={5}>
                   <VisualizationTab gameId={gameId} />
                 </TabPanel>
                 <TabPanel mt={5}>
-                  <VisualizationGroupTab />
+                  <VisualizationGroupTab gameId={gameId} />
                 </TabPanel>
               </TabPanels>
             </Tabs>
@@ -112,3 +141,9 @@ const GameImage = styled.div`
   border-radius: 50%;
   background-color: #6f6f6f;
 `;
+
+
+
+// Make the delete request
+
+// Redirect or update the UI as needed

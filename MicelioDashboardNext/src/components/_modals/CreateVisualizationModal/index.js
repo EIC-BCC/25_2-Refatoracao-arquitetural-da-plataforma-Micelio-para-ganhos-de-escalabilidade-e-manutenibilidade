@@ -7,67 +7,124 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  ModalOverlay, Textarea
+  ModalOverlay,
+  Textarea,
+  Box,
 } from "@chakra-ui/react";
-import {useState} from "react";
+import { useState } from "react";
 import Api from "../../../services/Api";
-import {toast} from "react-toastify";
+import { toast } from "react-toastify";
+import Visualization from "../../Visualization/Visualization";
 
-const CreateVisualizationModal = ({gameId, isOpen, onClose}) => {
-  const [visualizationName, setVisualizationName] = useState()
-  const [visualizationContent, setVisualizationContent] = useState()
+const CreateVisualizationModal = ({ gameId, isOpen, onClose }) => {
+  const [visualizationName, setVisualizationName] = useState("");
+  const [visualizationContent, setVisualizationContent] = useState(`{\n  "graphs": []\n}`);
+  const [previewConfig, setPreviewConfig] = useState(null);
+  const [activities, setActivities] = useState([]);
 
-  const doCreateVisualization = async (formEvent) => {
-
-    console.log(visualizationContent)
-
-
+  const doCreateVisualization = async () => {
     try {
       await Api.post(`/visualization/${gameId}`, {
         name: visualizationName,
-        config: visualizationContent,
-      })
+        config: JSON.parse(visualizationContent),
+      });
 
-      toast.success("Visualização cadastrada com sucesso")
-      onClose()
+      toast.success("Visualização cadastrada com sucesso");
+      onClose();
+      setVisualizationName("");
+      setVisualizationContent(`{\n  "graphs": []\n}`);
+      setPreviewConfig(null);
     } catch (e) {
-      toast.error(e.response.data.error)
+      toast.error(e?.response?.data?.error || "Erro ao criar visualização");
     }
+  };
 
-  }
+  const handlePreview = async () => {
+    try {
+      const parsedConfig = JSON.parse(visualizationContent);
+      setPreviewConfig(parsedConfig);
+
+      // Load related activities (for example purposes, adapt as needed)
+      const res = await Api.get(`/activity/by-game/${gameId}`);
+      setActivities(res.data.activities || []);
+    } catch (e) {
+      toast.error("Configuração inválida ou erro ao carregar dados.");
+      console.error(e);
+    }
+  };
 
   return (
-      <Modal isOpen={isOpen} onClose={() => {
-        onClose()
-        setVisualizationName('')
-        setVisualizationContent('')
-      }}>
-        <ModalOverlay/>
-        <ModalContent>
-          <ModalHeader>Criar visualização</ModalHeader>
-          <ModalCloseButton/>
-          <ModalBody>
-            <Input placeholder={'Nome da visualização'} w={'100%'} value={visualizationName}
-                   onChange={e => setVisualizationName(e.target.value)}/>
-            <Textarea w={'100%'} minH={'200px'} mt={5} value={visualizationContent} onChange={e => setVisualizationContent(e.target.value)}/>
-          </ModalBody>
+    <Modal
+      isOpen={isOpen}
+      onClose={() => {
+        onClose();
+        setVisualizationName("");
+        setVisualizationContent(`{\n  "graphs": []\n}`);
+        setPreviewConfig(null);
+      }}
+      size="6xl"
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Criar visualização</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <Input
+            placeholder="Nome da visualização"
+            w="100%"
+            mb={4}
+            value={visualizationName}
+            onChange={(e) => setVisualizationName(e.target.value)}
+          />
 
-          <ModalFooter>
-            <Button variant='ghost' onClick={() => {
-              onClose()
-              setVisualizationName('')
-              setVisualizationContent('')
-            }}>Cancelar</Button>
-            <Button variant={'primary'} ms={3} onClick={doCreateVisualization}>
-              Criar visualização
-            </Button>
+          <Textarea
+            fontFamily="monospace"
+            w="100%"
+            minH="200px"
+            value={visualizationContent}
+            onChange={(e) => setVisualizationContent(e.target.value)}
+          />
 
-            <br/>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          <Button mt={3} colorScheme="blue" onClick={handlePreview}>
+            Pré-visualizar
+          </Button>
 
-  )
-}
+          <Box mt={5}>
+            <strong>Prévia:</strong>
+            <Box mt={3} border="1px solid #E2E8F0" borderRadius="md" p={2}>
+              {previewConfig ? (
+                <Visualization
+                  activities={activities}
+                  config={previewConfig}
+                />
+              ) : (
+                <Box color="gray.500" fontSize="sm">
+                  Nenhuma visualização carregada.
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </ModalBody>
 
-export default CreateVisualizationModal
+        <ModalFooter>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              onClose();
+              setVisualizationName("");
+              setVisualizationContent(`{\n  "graphs": []\n}`);
+              setPreviewConfig(null);
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button colorScheme="green" ml={3} onClick={doCreateVisualization}>
+            Criar visualização
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+};
+
+export default CreateVisualizationModal;

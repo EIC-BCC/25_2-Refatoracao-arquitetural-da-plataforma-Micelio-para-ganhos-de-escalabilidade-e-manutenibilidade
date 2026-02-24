@@ -10,5 +10,6 @@ Router.patch('/', userController.update);
 Router.post('/login', userController.login)
 Router.delete('/login', userController.logout)
 Router.post('/update-password', userController.updatePassword)
+Router.delete('/login', userController.logout);
 
 module.exports = Router;

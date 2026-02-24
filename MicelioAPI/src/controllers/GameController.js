@@ -211,6 +211,31 @@ class GameController{
 
     }
 
+
+    async deleteGame(req, res) {
+      const { id } = req.params;
+  
+      try {
+          // Step 1: Delete dependent records in haspermission
+          await knex('haspermission').where({ game_id: id }).del();
+          
+          // Step 2: Delete the game
+          const result = await knex('Game').where({ game_id: id }).del();
+  
+          if (result) {
+              return res.status(200).json({ message: 'Game deleted successfully' });
+          } else {
+              return res.status(404).json({ message: 'Game not found' });
+          }
+      } catch (error) {
+          console.error(error);
+          return res.status(500).json({ message: 'An error occurred while deleting the game' });
+      }
+  }
+  
+
+
 }
+
 
 module.exports = GameController;
