@@ -60,7 +60,7 @@ graph TD;
     User-->NextJS;
     NextJS-->EdgeFunction;
     NextJS-->API;
-    API-->Database;
+    API-->Database[(MySQL<br/>Connection Pooling)];
     EdgeFunction-->Database;
 ```
 # Dependências
